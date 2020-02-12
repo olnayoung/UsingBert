@@ -14,25 +14,7 @@ from transformers import BertTokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 # len(tokenizer.vocab)
 
-tokens = tokenizer.tokenize('Hello WORLD how ARE yoU?')         # upper -> lower
-# print(tokens)                                                   # ['hello', 'world', 'how', 'are', 'you', '?']
-
-indexes = tokenizer.convert_tokens_to_ids(tokens)
-# print(indexes)                                                  # [7592, 2088, 2129, 2024, 2017, 1029]
-
-init_token = tokenizer.cls_token
-eos_token = tokenizer.sep_token
-pad_token = tokenizer.pad_token
-unk_token = tokenizer.unk_token
-
-# print(init_token, eos_token, pad_token, unk_token)
-init_token_idx = tokenizer.cls_token_id
-eos_token_idx = tokenizer.sep_token_id
-pad_token_idx = tokenizer.pad_token_id
-unk_token_idx = tokenizer.unk_token_id
-
-max_input_length = tokenizer.max_model_input_sizes['bert-base-uncased']
-# print(max_input_length)                                         
+max_input_length = tokenizer.max_model_input_sizes['bert-base-uncased']                              
 
 def tokenize_and_cut(sentence):
     tokens = tokenizer.tokenize(sentence)
@@ -46,24 +28,26 @@ from torchtext import data
 from torchtext import datasets
 
 TEXT = data.Field(batch_first = True, use_vocab = False, tokenize = tokenize_and_cut,
-                  preprocessing = tokenizer.convert_tokens_to_ids,
-                  init_token = init_token_idx, eos_token = eos_token_idx, pad_token = pad_token_idx, unk_token = unk_token_idx)
+                  preprocessing = tokenizer.convert_tokens_to_ids)
 LABEL = data.LabelField(dtype = torch.float)
+# Set data format
 
 train_data, test_data = datasets.IMDB.splits(TEXT, LABEL)
-train_data, valid_data = train_data.split(random_state = random.seed(SEED))
-
-# print(f"Number of training examples: {len(train_data)}")
-# print(f"Number of validation examples: {len(valid_data)}")
-# print(f"Number of testing examples: {len(test_data)}")
-
-# print(vars(train_data.examples[6]))
-
+# train_data.examples = [{'text': [ids], 'label': 'pos' | 'neg'}, {...}, ...]
+# train_data: dirname('aclImdb'), fields, name = ('imdb'), urls
+print(vars(train_data.examples[6]))
+# {'text': [1045, 2123, 1005, ... , 4276, 2009, 1012], 'label': 'pos'}
 tokens = tokenizer.convert_ids_to_tokens(vars(train_data.examples[6])['text'])
-# print(tokens)
+print(tokens)
+# ['i', 'don', "'", ... , 'worth', 'it', '.']
+
+train_data, valid_data = train_data.split(random_state = random.seed(SEED))
+# split training set & validation set
 
 LABEL.build_vocab(train_data)
-# print(LABEL.vocab.stoi)
+# make vocaburary with words in training data
+print(LABEL.vocab.stoi)
+# defaultdict(None, {'neg': 0, 'pos': 1})
 
 
 
@@ -73,8 +57,6 @@ import torch.nn as nn
 from transformers import BertTokenizer, BertModel
 import torch.optim as optim
 import time
-
-bert = BertModel.from_pretrained('bert-base-uncased')
 
 class BERTGRUSentiment(nn.Module):
     def __init__(self, bert, hidden_dim, output_dim, n_layers, bidirectional, dropout):
@@ -111,6 +93,7 @@ N_LAYERS = 2
 BIDIRECTIONAL = True
 DROPOUT = 0.25
 
+bert = BertModel.from_pretrained('bert-base-uncased')
 model = BERTGRUSentiment(bert, HIDDEN_DIM, OUTPUT_DIM, N_LAYERS, BIDIRECTIONAL, DROPOUT)
 
 
@@ -126,6 +109,7 @@ for name, param in model.named_parameters():
 
 optimizer = optim.Adam(model.parameters())
 criterion = nn.BCEWithLogitsLoss()
+# sigmoid layer + BCELoss
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
