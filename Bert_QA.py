@@ -8,6 +8,7 @@ text_2 = "Jim Henson was a nice puppet"
 
 input_ids = tokenizer.encode(text_1, text_2)    # [CLS], text_1, [SEP], text_2, [SEP]
 token_type_ids = [0 if i <= input_ids.index(102) else 1 for i in range(len(input_ids))] # 102 = [SEP]
+# token_type_ids = [0] * len(input_ids)
 
 model = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
 start_scores, end_scores = model(torch.tensor([input_ids]), token_type_ids=torch.tensor([token_type_ids]))

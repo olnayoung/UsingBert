@@ -61,13 +61,17 @@ model.load_state_dict(torch.load('tut6-model.pt'))
 
 def predict_sentiment(model, tokenizer, sentence):
     model.eval()
+
     tokens = tokenizer.tokenize(sentence)
-    tokens = tokens[:max_input_length-2]
+    tokens = tokens[:max_input_length-2]        # because of the start and the end
     indexed = [init_token_idx] + tokenizer.convert_tokens_to_ids(tokens) + [eos_token_idx]
+
     tensor = torch.LongTensor(indexed).to(device)
     tensor = tensor.unsqueeze(0)
+
     prediction = torch.sigmoid(model(tensor))
     return prediction.item()
 
-
-print(predict_sentiment(model, tokenizer, "This film is terrible"))
+print(predict_sentiment(model, tokenizer, "This film is terrible"))     # 0.02762065827846527
+print(predict_sentiment(model, tokenizer, "This film is not so good"))  # 0.43736758828163147
+print(predict_sentiment(model, tokenizer, "This film is perfect"))      # 0.9662169814109802
